@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  /* 1. Define Custom Font */
+  --font-golos: "Golos Text", sans-serif;
+
+  /* 2. Define Custom Colors */
+  --color-dark: #0f0f0f;
+  --color-accent: #d6f844;
+  --color-grey: #949494;
+  --color-nav-bg: #515151;
+}
+
+/* 3. Apply Base Styles */
+/* Note: @layer base is often not strictly needed in v4 for simple body styles, 
+   but good for organization */
+@layer base {
+  body {
+    font-family: var(--font-golos);
+    background-color: var(--color-dark);
+    color: #ebebeb;
+    overflow-x: hidden;
+  }
+}
+
+/* Lenis Scroll Styles (unchanged) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
