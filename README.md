@@ -30,4 +30,5 @@ Ensure you have **Node.js** (v18+ recommended) installed on your machine.
 ### 2. Clone the Repository
 ```bash
 git clone <your-repo-url>
-cd roman-museum
+cd 3D_Model
+
