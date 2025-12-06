@@ -14,6 +14,7 @@ const Scene = ({ setLoaded }) => {
 
   useEffect(() => {
     if (!canvasRef.current) return;
+    let animationId;
 
     // --- SETUP ---
     const scene = new THREE.Scene();
@@ -87,6 +88,7 @@ const Scene = ({ setLoaded }) => {
     composer.addPass(bloomPass);
 
     // --- MODEL LOADER ---
+    let loadedModel = null;
     const gltfLoader = new GLTFLoader();
     gltfLoader.load(
       "https://raw.githubusercontent.com/Sabur-Ahemad/roman-godess-3d/main/flora/scene.gltf",
@@ -100,46 +102,47 @@ const Scene = ({ setLoaded }) => {
         });
         // Positions from your main.js
         mesh.position.set(0, 10.8, -15);
+        loadedModel = mesh;
         group.add(mesh);
 
         // Notify Parent Component that loading is done
-        setTimeout(() => setLoaded(true), 500);
+        setLoaded(true);
       }
     );
 
     // --- ANIMATIONS ---
-    // Scroll Triggers
-    const rotateAnim = gsap.to(group.rotation, {
-      y: "+=6.28",
-      scrollTrigger: {
-        trigger: "body",
-        start: "top top",
-        end: "bottom bottom",
-        scrub: 1,
-      },
-    });
+    const ctx = gsap.context(() => {
+      // Scroll Triggers
+      gsap.to(group.rotation, {
+        y: "+=6.28", // Full rotation
+        scrollTrigger: {
+          trigger: "body",
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 1,
+        },
+      });
 
-    const cameraAnim = gsap.to(camera.position, {
-      y: 1,
-      z: 1.7,
-      scrollTrigger: {
-        trigger: "body",
-        start: "top top",
-        end: "bottom bottom",
-        scrub: 1,
-      },
+      gsap.to(camera.position, {
+        y: 1,
+        z: 1.7,
+        scrollTrigger: {
+          trigger: "body",
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 1,
+        },
+      });
     });
 
     // Tick Loop
     const clock = new THREE.Clock();
-    let animationId;
 
     const tick = () => {
       const elapsedTime = clock.getElapsedTime();
 
       // Flicker effect
-      torusLight.intensity =
-        torusLight.intensity + Math.sin(elapsedTime * 10) * 0.1; // simplified math
+      torusLight.intensity = 0.01 + Math.sin(elapsedTime * 10) * 0.005;
 
       // Auto Rotation
       torus.rotation.z += 0.01;
@@ -167,14 +170,24 @@ const Scene = ({ setLoaded }) => {
     return () => {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(animationId);
-      // Kill GSAP triggers to prevent memory leaks
-      rotateAnim.kill();
-      cameraAnim.kill();
-      ScrollTrigger.getAll().forEach((t) => t.kill());
+      ctx.revert(); // Cleanup GSAP animations and ScrollTriggers
 
       // Dispose Three.js objects
       geometry.dispose();
       material.dispose();
+      composer.dispose();
+      bloomPass.dispose();
+      renderPass.dispose();
+
+      if (loadedModel) {
+        loadedModel.traverse((child) => {
+          if (child.isMesh) {
+            child.geometry.dispose();
+            child.material.dispose();
+          }
+        });
+        scene.remove(loadedModel);
+      }
       renderer.dispose();
     };
   }, [setLoaded]);
