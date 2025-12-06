@@ -31,13 +31,28 @@ function App() {
 
   // Initialize Lenis Smooth Scroll
   useEffect(() => {
-    const lenis = new Lenis();
+    const lenis = new Lenis({
+      // Optional: Add some configuration
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    });
+
     function raf(time) {
       lenis.raf(time);
       requestAnimationFrame(raf);
     }
     requestAnimationFrame(raf);
-    return () => lenis.destroy();
+
+    // Sync GSAP ScrollTrigger with Lenis
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((time) => lenis.raf(time * 1000));
+    gsap.ticker.lagSmoothing(0);
+
+    return () => {
+      lenis.destroy();
+      // It's good practice to also kill all ScrollTriggers on cleanup
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
   }, []);
 
   // Intro & Parallax Animations
@@ -68,8 +83,7 @@ function App() {
       });
 
       // Parallax Effect
-      const images = document.querySelectorAll(".img-main");
-      images.forEach((img) => {
+      gsap.utils.toArray(".img-main").forEach((img) => {
         gsap.to(img, {
           y: 0,
           opacity: 1,
