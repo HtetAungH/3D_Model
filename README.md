@@ -31,7 +31,7 @@ Ensure you have **Node.js** (v18+ recommended) installed on your machine.
 ### 2. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/HtetAungH/3D_Model.git
 cd 3D_Model
 
 ```
