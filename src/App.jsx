@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import Scene from "./component/Scene";
 import Loader from "./component/Loader";
+import VisitOverlay from "./component/VisitOverLay";
+import ExhibitionOverlay from "./component/ExhibitionOverlay";
+import CollectionOverlay from "./component/CollectionOverlay";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "@studio-freight/lenis";
@@ -27,11 +30,16 @@ const galleryImages = [
 
 function App() {
   const [loaded, setLoaded] = useState(false);
+  const [isVisitOpen, setIsVisitOpen] = useState(false);
+  const [isExhibitionsOpen, setIsExhibitionsOpen] = useState(false);
+  const [isCollectionOpen, setIsCollectionOpen] = useState(false);
   const containerRef = useRef(null);
+  const lenisRef = useRef(null);
 
   // Initialize Lenis Smooth Scroll
   useEffect(() => {
     const lenis = new Lenis({
+      // syncTouch: true, // Consider adding for better touch support
       // Optional: Add some configuration
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -41,6 +49,7 @@ function App() {
       lenis.raf(time);
       requestAnimationFrame(raf);
     }
+    lenisRef.current = lenis;
     requestAnimationFrame(raf);
 
     // Sync GSAP ScrollTrigger with Lenis
@@ -50,10 +59,20 @@ function App() {
 
     return () => {
       lenis.destroy();
+      lenisRef.current = null;
       // It's good practice to also kill all ScrollTriggers on cleanup
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     };
   }, []);
+
+  // Control body scroll when VisitOverlay is open/closed
+  useEffect(() => {
+    if (isVisitOpen) {
+      lenisRef.current?.stop();
+    } else {
+      lenisRef.current?.start();
+    }
+  }, [isVisitOpen]);
 
   // Intro & Parallax Animations
   useLayoutEffect(() => {
@@ -105,7 +124,18 @@ function App() {
     <div ref={containerRef} className="relative min-h-screen">
       <Loader loaded={loaded} />
       <Scene setLoaded={setLoaded} />
-
+      <VisitOverlay
+        isOpen={isVisitOpen}
+        onClose={() => setIsVisitOpen(false)}
+      />
+      <ExhibitionOverlay
+        isOpen={isExhibitionsOpen}
+        onClose={() => setIsExhibitionsOpen(false)}
+      />
+      <CollectionOverlay
+        isOpen={isCollectionOpen}
+        onClose={() => setIsCollectionOpen(false)}
+      />
       {/* Main Content */}
       <main
         className={`transition-opacity duration-1000 ${
@@ -134,13 +164,20 @@ function App() {
               />
             </button>
             {["visit", "exhibitions & events", "collection"].map((text) => (
-              <a
+              <button
                 key={text}
-                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (text === "visit") setIsVisitOpen(true);
+                  // Check for exhibitions click
+                  if (text === "exhibitions & events")
+                    setIsExhibitionsOpen(true);
+                  if (text === "collection") setIsCollectionOpen(true);
+                }}
                 className="text-[11px] md:text-sm uppercase text-[#EBEBEB] hover:text-accent transition-colors duration-150"
               >
                 {text}
-              </a>
+              </button>
             ))}
             <button className="bg-nav-bg p-3 md:p-4">
               <img
